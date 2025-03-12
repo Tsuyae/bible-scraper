@@ -1,0 +1,40 @@
+# Byte-compiled / compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment (venv)
+venv/
+env/
+*.env
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs and debug files
+*.log
+debug.log
+nohup.out
+
+# macOS system files
+.DS_Store
+
+# CSV and data files (optional, uncomment if needed)
+# *.csv
+# *.json
+# *.xlsx
+
+# IDE / Editor specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Pip dependency lock files
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Environment variables and secrets (optional)
+.env
+config.json
