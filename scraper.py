@@ -23,6 +23,6 @@ for quote in soup.find_all("div", class_="quote"):
 
 # Convert to CSV
 df = pd.DataFrame(quotes_list)
-df.to_csv("quotes.csv", index=False)
+df.to_csv("data/data.csv", index=False)
 
 print("Scraping complete! Data saved to quotes.csv")
