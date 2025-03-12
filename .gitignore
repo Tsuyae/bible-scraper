@@ -20,10 +20,10 @@ nohup.out
 # macOS system files
 .DS_Store
 
-# CSV and data files (optional, uncomment if needed)
-# *.csv
-# *.json
-# *.xlsx
+#CSV and data files (optional, uncomment if needed)
+*.csv
+*.json
+*.xlsx
 
 # IDE / Editor specific
 .vscode/
