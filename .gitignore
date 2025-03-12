@@ -22,7 +22,7 @@ nohup.out
 
 #CSV and data files (optional, uncomment if needed)
 *.csv
-*.json
+# *.json
 *.xlsx
 
 # IDE / Editor specific

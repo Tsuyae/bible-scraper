@@ -1,9 +1,18 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import json
 
 # URL to scrape
+
+# Test URL:
 URL = "https://quotes.toscrape.com/"
+
+
+# General structure of URL to Scrape
+# bibleUrl = "https://www.biblegateway.com/passage/?search=[BOOK]%20[NUMBER]&version=NRSVCE"
+# with open("bible-idex.json", "r") as file:
+#     bible_index_data = json.load(file)
 
 # Fetch the webpage
 response = requests.get(URL)
