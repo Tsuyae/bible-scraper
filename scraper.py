@@ -32,6 +32,6 @@ for quote in soup.find_all("div", class_="quote"):
 
 # Convert to CSV
 df = pd.DataFrame(quotes_list)
-df.to_csv("data/data.csv", index=False)
+df.to_csv("data/bible.csv", index=False)
 
-print("Scraping complete! Data saved to quotes.csv")
+print("Scraping complete! Data saved to data/bible.csv")
