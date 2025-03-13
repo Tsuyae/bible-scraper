@@ -20,6 +20,9 @@ books = [(book["display"], book["osis"], book["num_chapters"]) for book in bible
 # Store all verses in a nested dictionary
 bible_data = defaultdict(lambda: defaultdict(dict))
 
+# Bible Version
+bible_version = "NRSVCE"
+
 # Loop through each book
 for display_name, osis, num_chapters in books:
     print(f"Scraping {display_name} ({osis})...")
@@ -32,7 +35,7 @@ for display_name, osis, num_chapters in books:
         print(f"Scraping Chapter {chapter_number}...")
 
         # Construct URL
-        URL = f"https://www.biblegateway.com/passage/?search={display_query_string}%20{chapter_number}&version=NRSVCE"
+        URL = f"https://www.biblegateway.com/passage/?search={display_query_string}%20{chapter_number}&version={bible_version}"
 
         # Fetch the webpage
         headers = {
