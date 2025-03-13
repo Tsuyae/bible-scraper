@@ -17,7 +17,6 @@ with open("bible-index.json", "r") as file:
 # and "osis", which is it's respective abbreviation, into a list
 books = [(book["display"], book["osis"], book["num_chapters"]) for book in bible_index_data["data"][0]]
 
-
 # Store all verses in a nested dictionary
 bible_data = defaultdict(lambda: defaultdict(dict))
 
@@ -40,6 +39,9 @@ for display_name, osis, num_chapters in books:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/110.0.0.0"
         }
         response = requests.get(URL, headers=headers)
+
+        # Force UTF-8 encoding to avoid bad characters
+        response.encoding = "utf-8"
 
         if response.status_code != 200:
             print(f"Error: {response.status_code} - Skipping {display_name} {chapter_number}")
@@ -87,7 +89,7 @@ for display_name, osis, num_chapters in books:
         # Sleep briefly to avoid getting blocked
         time.sleep(2)
 
-# Save all verses to a JSON file
+# Save all verses to a JSON file with UTF-8 encoding
 with open("bible_scraped.json", "w", encoding="utf-8") as f:
     json.dump(bible_data, f, indent=4, ensure_ascii=False)
 
