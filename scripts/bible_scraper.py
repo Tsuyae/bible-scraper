@@ -99,7 +99,7 @@ def scrape_bible(bible_version="NRSVCE", bible_index_file="bible-index.json", ou
                 bible_data[display_name][str(chapter_number)][str(verse)] = " ".join(texts)
 
             # Sleep briefly to avoid getting blocked
-            time.sleep(1)
+            time.sleep(2)
 
     # Save all verses to a JSON file with UTF-8 encoding
     with open(output_path, "w", encoding="utf-8") as f:
