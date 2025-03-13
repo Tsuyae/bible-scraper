@@ -24,6 +24,7 @@ nohup.out
 *.csv
 # *.json
 *.xlsx
+data/
 
 # IDE / Editor specific
 .vscode/
