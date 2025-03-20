@@ -106,3 +106,7 @@ def scrape_bible(bible_version="NRSVCE", bible_index_file="bible-index.json", ou
         json.dump(bible_data, f, indent=4, ensure_ascii=False)
 
     print(f"Scraping complete! All verses saved to {output_path}")
+
+
+
+scrape_bible(bible_version="NRSVCE", output_file="bible_nrsvce.json")
