@@ -2,6 +2,85 @@ import os
 import requests
 import json
 
+number_to_osis = {
+    "1": {"osis": "Gen", "english_name": "Genesis"},
+    "2": {"osis": "Exod", "english_name": "Exodus"},
+    "3": {"osis": "Lev", "english_name": "Leviticus"},
+    "4": {"osis": "Num", "english_name": "Numbers"},
+    "5": {"osis": "Deut", "english_name": "Deuteronomy"},
+    "6": {"osis": "Josh", "english_name": "Joshua"},
+    "7": {"osis": "Judg", "english_name": "Judges"},
+    "8": {"osis": "Ruth", "english_name": "Ruth"},
+    "9": {"osis": "1 Sam", "english_name": "1 Samuel"},
+    "10": {"osis": "2 Sam", "english_name": "2 Samuel"},
+    "11": {"osis": "1 Kgs", "english_name": "1 Kings"},
+    "12": {"osis": "2 Kgs", "english_name": "2 Kings"},
+    "13": {"osis": "1 Chr", "english_name": "1 Chronicles"},
+    "14": {"osis": "2 Chr", "english_name": "2 Chronicles"},
+    "15": {"osis": "Ezra", "english_name": "Ezra"},
+    "16": {"osis": "Neh", "english_name": "Nehemiah"},
+    "17": {"osis": "Esth", "english_name": "Esther"},
+    "18": {"osis": "Job", "english_name": "Job"},
+    "19": {"osis": "Ps", "english_name": "Psalms"},
+    "20": {"osis": "Prov", "english_name": "Proverbs"},
+    "21": {"osis": "Eccl", "english_name": "Ecclesiastes"},
+    "22": {"osis": "Song", "english_name": "Song of Solomon"},
+    "23": {"osis": "Isa", "english_name": "Isaiah"},
+    "24": {"osis": "Jer", "english_name": "Jeremiah"},
+    "25": {"osis": "Lam", "english_name": "Lamentations"},
+    "26": {"osis": "Ezek", "english_name": "Ezekiel"},
+    "27": {"osis": "Dan", "english_name": "Daniel"},
+    "28": {"osis": "Hos", "english_name": "Hosea"},
+    "29": {"osis": "Joel", "english_name": "Joel"},
+    "30": {"osis": "Amos", "english_name": "Amos"},
+    "31": {"osis": "Obad", "english_name": "Obadiah"},
+    "32": {"osis": "Jonah", "english_name": "Jonah"},
+    "33": {"osis": "Mic", "english_name": "Micah"},
+    "34": {"osis": "Nah", "english_name": "Nahum"},
+    "35": {"osis": "Hab", "english_name": "Habakkuk"},
+    "36": {"osis": "Zeph", "english_name": "Zephaniah"},
+    "37": {"osis": "Hag", "english_name": "Haggai"},
+    "38": {"osis": "Zech", "english_name": "Zechariah"},
+    "39": {"osis": "Mal", "english_name": "Malachi"},
+    "40": {"osis": "Matt", "english_name": "Matthew"},
+    "41": {"osis": "Mark", "english_name": "Mark"},
+    "42": {"osis": "Luke", "english_name": "Luke"},
+    "43": {"osis": "John", "english_name": "John"},
+    "44": {"osis": "Acts", "english_name": "Acts"},
+    "45": {"osis": "Rom", "english_name": "Romans"},
+    "46": {"osis": "1 Cor", "english_name": "1 Corinthians"},
+    "47": {"osis": "2 Cor", "english_name": "2 Corinthians"},
+    "48": {"osis": "Gal", "english_name": "Galatians"},
+    "49": {"osis": "Eph", "english_name": "Ephesians"},
+    "50": {"osis": "Phil", "english_name": "Philippians"},
+    "51": {"osis": "Col", "english_name": "Colossians"},
+    "52": {"osis": "1 Thess", "english_name": "1 Thessalonians"},
+    "53": {"osis": "2 Thess", "english_name": "2 Thessalonians"},
+    "54": {"osis": "1 Tim", "english_name": "1 Timothy"},
+    "55": {"osis": "2 Tim", "english_name": "2 Timothy"},
+    "56": {"osis": "Titus", "english_name": "Titus"},
+    "57": {"osis": "Phlm", "english_name": "Philemon"},
+    "58": {"osis": "Heb", "english_name": "Hebrews"},
+    "59": {"osis": "Jas", "english_name": "James"},
+    "60": {"osis": "1 Pet", "english_name": "1 Peter"},
+    "61": {"osis": "2 Pet", "english_name": "2 Peter"},
+    "62": {"osis": "1 John", "english_name": "1 John"},
+    "63": {"osis": "2 John", "english_name": "2 John"},
+    "64": {"osis": "3 John", "english_name": "3 John"},
+    "65": {"osis": "Jude", "english_name": "Jude"},
+    "66": {"osis": "Rev", "english_name": "Revelation"},
+    "69": {"osis": "Tob", "english_name": "Tobit"},
+    "70": {"osis": "Jdt", "english_name": "Judith"},
+    "73": {"osis": "Wis", "english_name": "Wisdom"},
+    "74": {"osis": "Sir", "english_name": "Sirach"},
+    "75": {"osis": "Bar", "english_name": "Baruch"},
+    "80": {"osis": "1 Macc", "english_name": "1 Maccabees"},
+    "81": {"osis": "2 Macc", "english_name": "2 Maccabees"}
+}
+
+# Create a reverse mapping from English name to OSIS code
+english_to_osis = { mapping["english_name"]: mapping["osis"] for mapping in number_to_osis.values() }
+
 def getBible():
     """
     Fetches the specified Bible version from getBible's API.
@@ -92,15 +171,16 @@ def getBible():
             book_response.raise_for_status()
             book_content = book_response.json()
 
-            # Initialize the dictionary for this book using the book name.
-            bible_verses[book_name] = {}
+            # Lookup OSIS code using the API response book name; use API name as title
+            osis_key = english_to_osis.get(book_name, book_name)
+            bible_verses[osis_key] = {"title": book_name, "chapters": {}}
 
             # chapters is expected to be a list of chapter objects.
             chapters = book_content.get("chapters", [])
             for chapter in chapters:
                 # Assume each chapter object has a "chapter" key for its number.
                 chapter_num = str(chapter.get("chapter", "unknown"))
-                bible_verses[book_name][chapter_num] = {}
+                bible_verses[osis_key]["chapters"][chapter_num] = {}
                 # Each chapter object contains a list of verses.
                 verses = chapter.get("verses", [])
                 for verse in verses:
@@ -108,7 +188,7 @@ def getBible():
                     verse_num = str(verse.get("verse", "unknown"))
                     # Remove trailing spaces from the verse text.
                     verse_text = verse.get("text", "").strip()
-                    bible_verses[book_name][chapter_num][verse_num] = verse_text
+                    bible_verses[osis_key]["chapters"][chapter_num][verse_num] = verse_text
 
             # Print the book name from the response as confirmation.
             print(f"Processed book: {book_content.get('name', 'No name provided')}")
