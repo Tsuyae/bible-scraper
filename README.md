@@ -1,9 +1,7 @@
-TODO: UPDATE README
 
+# Bible JSON Scraper/Fetcher
 
-# Bible Gateway Scraper
-
-A simple web scraper using **BeautifulSoup** to extract Bible verses from the **Bible Gateway Website**. The Bible is then exported as a JSON in the following format:
+A suite of scripts using multiple sources to retrieve/scrape the bible and output it into the following format:
 
 ```json
 {
@@ -17,7 +15,16 @@ A simple web scraper using **BeautifulSoup** to extract Bible verses from the **
 
 ## Features
 
-- The Python script in the scripts folder allows the user to scrape any Bible version hosted on Bible Gateway. To find what to pass in as ```bible_version```, refer to the Bible version's reference in the query string in site's URL. E.g., for RSV:
+## Features
+
+# getBible API Fetcher:
+
+This script (located in the scripts folder as getbible.py) fetches Bible translations and their corresponding verses using the getBible.net API. The user is prompted to select a Bible version, and the script then retrieves the full content for each book.
+The final output is a JSON file named in the format getbible_[ABBREVIATION].json stored in the data folder, which is gitignored.
+
+# Bible Gateway Scraper:
+
+The repository also contains a scraper that retrieves Bible data from Bible Gateway. To determine the proper bible_version parameter, refer to the Bible version’s reference in the query string of the site’s URL. For example, for RSV:
 
 ```
 https://www.biblegateway.com/passage/?search=Genesis%201&version=RSV
@@ -28,7 +35,7 @@ https://www.biblegateway.com/passage/?search=Genesis%201&version=RSV
 ### Clone the Repository (Github CLI)
 ```sh
 gh repo clone Tsuyae/bible-scraper
-cd bible-gateway-scraper
+cd bible-scraper
 ```
 
 ### Set Up a Virtual Environment
@@ -43,7 +50,7 @@ source venv/bin/activate  # macOS/Linux
 pip install -r requirements.txt
 ```
 
-### Run the Scraper
+### Run your Script of Choice
 ```sh
-python main.py
+python scripts/[SCRIPT_NAME].py
 ```

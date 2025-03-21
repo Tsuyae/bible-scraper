@@ -6,7 +6,9 @@ def getBible():
     """
     Fetches the specified Bible version from getBible's API.
     For more information on the API, see: https://getbible.net/docs
+
     Repository: https://github.com/getbible/v2/tree/master
+
     The final Bible verses are written to a file named in the format:
     getbible_[ABBREVIATION].json in the data folder.
     """
