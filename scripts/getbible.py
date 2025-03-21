@@ -1,13 +1,14 @@
+import os
 import requests
 import json
 
-def getBible(output_file="getBible.json"):
+def getBible():
     """
     Fetches the specified Bible version from getBible's API.
     For more information on the API, see: https://getbible.net/docs
     Repository: https://github.com/getbible/v2/tree/master
-
-    :param output_file: The filename where the translations JSON will be saved (default: 'getBible.json').
+    The final Bible verses are written to a file named in the format:
+    getbible_[ABBREVIATION].json in the data folder.
     """
     translations_url = "https://api.getbible.net/v2/translations.json"
 
@@ -21,13 +22,16 @@ def getBible(output_file="getBible.json"):
 
     data = response.json()
 
-    # Save the raw JSON data to file
+    # Save the raw translations JSON for debugging purposes (optional)
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    translations_file = os.path.join(script_dir, "..", "data", "getbible_translations.json")
     try:
-        with open(output_file, 'w', encoding='utf-8') as f:
+        os.makedirs(os.path.dirname(translations_file), exist_ok=True)
+        with open(translations_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
-        print(f"Translation data saved to {output_file}")
+        print(f"Translation data saved to {translations_file}")
     except Exception as e:
-        print(f"Error saving JSON to file: {e}")
+        print(f"Error saving translations JSON to file: {e}")
 
     # Extract translations list
     translations = []
@@ -58,6 +62,11 @@ def getBible(output_file="getBible.json"):
     chosen_abbr, chosen_name = translations[selection - 1]
     print(f"\nYou selected: {chosen_name} (abbreviation: {chosen_abbr})")
 
+    # Compute output file path in the data folder using the chosen abbreviation.
+    data_dir = os.path.join(script_dir, "..", "data")
+    os.makedirs(data_dir, exist_ok=True)
+    output_file = os.path.join(data_dir, f"getbible_{chosen_abbr}.json")
+
     # Fetch the books index for the chosen Bible version
     books_url = f"https://api.getbible.net/v2/{chosen_abbr}/books.json"
     try:
@@ -84,7 +93,7 @@ def getBible(output_file="getBible.json"):
             # Initialize the dictionary for this book using the book name.
             bible_verses[book_name] = {}
 
-            # chapters is now expected to be a list of chapter objects.
+            # chapters is expected to be a list of chapter objects.
             chapters = book_content.get("chapters", [])
             for chapter in chapters:
                 # Assume each chapter object has a "chapter" key for its number.
@@ -104,12 +113,11 @@ def getBible(output_file="getBible.json"):
         except requests.RequestException as e:
             print(f"Error fetching content for {book_name}: {e}")
 
-    # Write the complete Bible verses data to a JSON file.
-    output_verses_file = "bible_verses.json"
+    # Write the complete Bible verses data to the output JSON file.
     try:
-        with open(output_verses_file, "w", encoding="utf-8") as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(bible_verses, f, indent=4, ensure_ascii=False)
-        print(f"\nBible verses data saved to {output_verses_file}")
+        print(f"\nBible verses data saved to {output_file}")
     except Exception as e:
         print(f"Error saving bible verses JSON: {e}")
 
