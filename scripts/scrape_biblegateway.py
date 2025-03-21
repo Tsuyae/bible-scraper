@@ -8,7 +8,7 @@ from collections import defaultdict
 from urllib.parse import quote_plus
 
 
-def scrape_biblegateway(bible_version="NRSVCE", bible_index_file="bible_index.json", output_file="bible_scraped.json"):
+def scrape_biblegateway(bible_version="NRSVCE", bible_index_file="biblegateway_index.json", output_file="bible_scraped.json"):
     """
     Scrapes the entire Bible from BibleGateway using the specified version.
 

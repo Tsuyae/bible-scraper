@@ -2,6 +2,9 @@ import os
 import requests
 import json
 
+# Mapping of numeric keys to OSIS codes and English names
+# The numbering is based on the getBible's API
+
 number_to_osis = {
     "1": {"osis": "Gen", "english_name": "Genesis"},
     "2": {"osis": "Exod", "english_name": "Exodus"},
