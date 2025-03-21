@@ -1,16 +1,22 @@
 
 # Bible JSON Scraper/Fetcher
 
-A suite of scripts using multiple sources to retrieve/scrape the bible and output it into the following format:
+# Bible JSON Scraper/Fetcher
+
+A suite of scripts using multiple sources to retrieve the Bible and output it into the following JSON format:
 
 ```json
 {
-    "Genesis": {
-        "1": {
-            "1": "In the beginning when God created the heavens and the earth,",
-            .
-            .
-            .
+  "Gen": {
+    "title": "Genesis", // Localized name
+    "chapters": {
+      "1": {
+        "1": "In the beginning ..."
+      }
+    }
+  },
+  "Exod": { ... }
+}
 ```
 
 ## Features

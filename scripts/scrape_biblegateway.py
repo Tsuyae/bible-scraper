@@ -29,21 +29,21 @@ def scrape_biblegateway(bible_version="NRSVCE", bible_index_file="bible-index.js
     # Extract book names and OSIS codes
     books = [(book["display"], book["osis"], book["num_chapters"]) for book in bible_index_data["data"][0]]
 
-    # Store all verses in a nested dictionary
-    bible_data = defaultdict(lambda: defaultdict(dict))
+    # Store all verses in a nested dictionary using the desired structure
+    bible_data = {}
 
-    # Loop through each book
     for display_name, osis, num_chapters in books:
         print(f"Scraping {display_name} ({osis}) in {bible_version}...")
 
-        # Encode `display_name` to be URL-safe
-        display_query_string = quote_plus(display_name)
+        # Initialize the dictionary for this book using OSIS as the key and store the title
+        bible_data[osis] = {"title": display_name, "chapters": {}}
 
         # Loop through each chapter
         for chapter_number in range(1, num_chapters + 1):
             print(f"Scraping Chapter {chapter_number}...")
 
             # Construct URL dynamically
+            display_query_string = quote_plus(display_name)
             URL = f"https://www.biblegateway.com/passage/?search={display_query_string}%20{chapter_number}&version={bible_version}"
 
             # Fetch the webpage
@@ -61,9 +61,6 @@ def scrape_biblegateway(bible_version="NRSVCE", bible_index_file="bible-index.js
 
             # Parse the HTML
             soup = BeautifulSoup(response.text, "html.parser")
-
-            # Find the main container
-            container = soup.find("div", class_=f"version-{bible_version} result-text-style-normal text-html")
 
             # Dictionary to store merged verse fragments
             verses_dict = defaultdict(list)
@@ -94,9 +91,12 @@ def scrape_biblegateway(bible_version="NRSVCE", bible_index_file="bible-index.js
                 # Store text in dictionary, grouped by verse number
                 verses_dict[verse_number].append(verse_text)
 
+            # Ensure the chapter key exists under 'chapters'
+            bible_data[osis]["chapters"][str(chapter_number)] = {}
+
             # Merge verse fragments and store them in the structured dictionary
             for verse, texts in verses_dict.items():
-                bible_data[display_name][str(chapter_number)][str(verse)] = " ".join(texts)
+                bible_data[osis]["chapters"][str(chapter_number)][str(verse)] = " ".join(texts)
 
             # Sleep briefly to avoid getting blocked
             time.sleep(2)
@@ -106,7 +106,6 @@ def scrape_biblegateway(bible_version="NRSVCE", bible_index_file="bible-index.js
         json.dump(bible_data, f, indent=4, ensure_ascii=False)
 
     print(f"Scraping complete! All verses saved to {output_path}")
-
 
 
 scrape_biblegateway(bible_version="NRSVCE", output_file="bible_nrsvce.json")
