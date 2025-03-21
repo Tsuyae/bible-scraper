@@ -162,7 +162,7 @@ def getBible():
     bible_verses = {}
 
     # For each book in the books index, fetch its content and extract verses.
-    for key, book_info in books_data.items():
+    for num_key, book_info in books_data.items():
         book_name = book_info.get("name", "Unknown Book")
         book_url = book_info.get("url")
         print(f"\nFetching content for {book_name}...")
@@ -171,11 +171,17 @@ def getBible():
             book_response.raise_for_status()
             book_content = book_response.json()
 
-            # Lookup OSIS code using the API response book name; use API name as title
-            osis_key = english_to_osis.get(book_name, book_name)
+            # Use the outer numeric key to look up the OSIS code from number_to_osis
+            osis_entry = number_to_osis.get(num_key)
+            if osis_entry:
+                osis_key = osis_entry["osis"]
+            else:
+                osis_key = book_name
+
+            # Use the API response's book name as the title
             bible_verses[osis_key] = {"title": book_name, "chapters": {}}
 
-            # chapters is expected to be a list of chapter objects.
+            # Process chapters...
             chapters = book_content.get("chapters", [])
             for chapter in chapters:
                 # Assume each chapter object has a "chapter" key for its number.
