@@ -1,3 +1,6 @@
+TODO: UPDATE README
+
+
 # Bible Gateway Scraper
 
 A simple web scraper using **BeautifulSoup** to extract Bible verses from the **Bible Gateway Website**. The Bible is then exported as a JSON in the following format:
