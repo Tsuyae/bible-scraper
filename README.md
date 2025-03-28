@@ -58,5 +58,5 @@ pip install -r requirements.txt
 
 ### Run your Script of Choice
 ```sh
-python scripts/[SCRIPT_NAME].py
+python3 scripts/[SCRIPT_NAME].py
 ```
