@@ -102,6 +102,11 @@ def get_table_of_contents() -> Dict[str, Tuple[str, int]]:
             if book_link and book_code_link:
                 book_title = book_link.text.strip()
                 book_code = book_code_link.text.strip()
+
+                # Special handling for Kings books
+                if book_code in ['1Kön', '2Kön']:
+                    book_code = book_code.replace('Kön', 'Koen')
+
                 if book_code in OSIS_MAP:
                     # Get all chapter links
                     chapter_links = cells[2].find_all('a')
@@ -114,7 +119,9 @@ def get_table_of_contents() -> Dict[str, Tuple[str, int]]:
 
 def get_chapter_text(book_code: str, chapter: int) -> Dict[int, str]:
     """Get the text for a specific chapter."""
-    url = f"{TABLE_OF_CONTENTS}{book_code.lower()}{chapter}.html"
+    # Convert book code to lowercase for URL construction
+    url_book_code = book_code.lower()
+    url = f"{TABLE_OF_CONTENTS}{url_book_code}{chapter}.html"
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -133,16 +140,30 @@ def get_chapter_text(book_code: str, chapter: int) -> Dict[int, str]:
                     # Get the verse text from the next cell
                     text_cell = row.find('td', width="75%")
                     if text_cell:
-                        # Clean up the text by removing newlines and extra whitespace
-                        verse_text = ' '.join(text_cell.text.strip().split())
+                        # Clean up the text by removing newlines, extra whitespace, and forward slashes
+                        verse_text = ' '.join(text_cell.text.strip().replace('/', '').split())
                         verses[verse_num] = verse_text
                 except ValueError:
                     continue
 
     return verses
 
+def print_detected_books(book_info: Dict[str, Tuple[str, int]]):
+    """Print the list of detected books and their chapter counts."""
+    print("\nDetected Books:")
+    print("-" * 50)
+    print(f"{'German Code':<10} {'English Code':<10} {'Title':<30} {'Chapters':<8}")
+    print("-" * 50)
+
+    for book_code, (title, chapters) in book_info.items():
+        english_code = OSIS_MAP.get(book_code, "Unknown")
+        print(f"{book_code:<10} {english_code:<10} {title[:30]:<30} {chapters:<8}")
+
+    print("-" * 50)
+    print(f"Total books detected: {len(book_info)}\n")
+
 def scrape_bible(output_dir: str = "data"):
-    """Scrape Genesis and save it to a JSON file."""
+    """Scrape the entire German Bible and save after each book."""
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
@@ -150,13 +171,31 @@ def scrape_bible(output_dir: str = "data"):
     print("Getting table of contents...")
     book_info = get_table_of_contents()
 
+    # Print detected books
+    print_detected_books(book_info)
+
     # Initialize the Bible structure
     bible_data = {}
+    output_file = os.path.join(output_dir, "german_bible.json")
 
-    # Only scrape Genesis
-    if "Gen" in book_info:
-        book_title, max_chapter = book_info["Gen"]
-        print(f"Scraping Genesis ({book_title})...")
+    # Try to load existing data if file exists
+    if os.path.exists(output_file):
+        try:
+            with open(output_file, 'r', encoding='utf-8') as f:
+                bible_data = json.load(f)
+            print("Loaded existing data from", output_file)
+        except json.JSONDecodeError:
+            print("Could not load existing data, starting fresh")
+
+    # Scrape each book
+    total_books = len(book_info)
+    for i, (book_code, (book_title, max_chapter)) in enumerate(book_info.items(), 1):
+        # Skip if we already have this book
+        if OSIS_MAP[book_code] in bible_data:
+            print(f"[{i}/{total_books}] Skipping {book_code} ({book_title}) - already scraped")
+            continue
+
+        print(f"[{i}/{total_books}] Scraping {book_code} ({book_title})...")
         book_data = {
             "title": book_title,
             "chapters": {}
@@ -164,25 +203,27 @@ def scrape_bible(output_dir: str = "data"):
 
         # Scrape each chapter
         for chapter in range(1, max_chapter + 1):
-            print(f"  Chapter {chapter}...")
+            print(f"  Chapter {chapter}/{max_chapter}...")
             try:
-                verses = get_chapter_text("Gen", chapter)
+                verses = get_chapter_text(book_code, chapter)
                 if verses:
                     book_data["chapters"][str(chapter)] = verses
                 time.sleep(1)  # Be nice to the server
             except Exception as e:
-                print(f"Error scraping Genesis {chapter}: {e}")
+                print(f"Error scraping {book_code} {chapter}: {e}")
                 continue
 
-        # Add Genesis data to Bible
+        # Add book data to Bible and save after each book
         if book_data["chapters"]:
-            bible_data["Gen"] = book_data
+            bible_data[OSIS_MAP[book_code]] = book_data
+            # Save after each book
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(bible_data, f, ensure_ascii=False, indent=2)
+            print(f"Saved {book_code} to {output_file}")
+        else:
+            print(f"Warning: No chapters found for {book_code}")
 
-    # Save Bible data
-    output_file = os.path.join(output_dir, "german_bible.json")
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(bible_data, f, ensure_ascii=False, indent=2)
-    print(f"Saved Genesis to {output_file}")
+    print(f"Completed scraping all books. Final data saved to {output_file}")
 
 if __name__ == "__main__":
     scrape_bible()
