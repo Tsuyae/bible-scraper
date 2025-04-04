@@ -176,7 +176,7 @@ def scrape_bible(output_dir: str = "data"):
 
     # Initialize the Bible structure
     bible_data = {}
-    output_file = os.path.join(output_dir, "german_bible.json")
+    output_file = os.path.join(output_dir, "bible_de.json")
 
     # Try to load existing data if file exists
     if os.path.exists(output_file):
