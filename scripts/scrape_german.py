@@ -133,7 +133,8 @@ def get_chapter_text(book_code: str, chapter: int) -> Dict[int, str]:
                     # Get the verse text from the next cell
                     text_cell = row.find('td', width="75%")
                     if text_cell:
-                        verse_text = text_cell.text.strip()
+                        # Clean up the text by removing newlines and extra whitespace
+                        verse_text = ' '.join(text_cell.text.strip().split())
                         verses[verse_num] = verse_text
                 except ValueError:
                     continue
