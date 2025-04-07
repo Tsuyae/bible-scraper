@@ -142,6 +142,41 @@ def compare_verses(master_data: Dict, test_data: Dict) -> Dict[str, Dict[str, Se
 
     return differences
 
+def compare_counts(master_data: Dict, test_data: Dict) -> Dict[str, Dict[str, int]]:
+    """Compare chapter and verse counts between master and test data."""
+    differences = {}
+
+    for book_code in MASTER_BOOKS:
+        if book_code not in master_data or book_code not in test_data:
+            continue
+
+        master_book = master_data[book_code]
+        test_book = test_data[book_code]
+
+        if "chapters" not in master_book or "chapters" not in test_book:
+            continue
+
+        master_chapters = master_book["chapters"]
+        test_chapters = test_book["chapters"]
+
+        # Compare chapter counts
+        master_chapter_count = len(master_chapters)
+        test_chapter_count = len(test_chapters)
+
+        # Compare verse counts
+        master_verse_count = sum(len(chapter) for chapter in master_chapters.values())
+        test_verse_count = sum(len(chapter) for chapter in test_chapters.values())
+
+        if master_chapter_count != test_chapter_count or master_verse_count != test_verse_count:
+            differences[book_code] = {
+                "master_chapters": master_chapter_count,
+                "test_chapters": test_chapter_count,
+                "master_verses": master_verse_count,
+                "test_verses": test_verse_count
+            }
+
+    return differences
+
 def get_available_bibles() -> List[str]:
     """Get list of available Bible JSON files in the data directory."""
     data_dir = Path(__file__).parent.parent / "data"
@@ -198,7 +233,7 @@ def main():
     # Check for missing books
     missing_books = set(MASTER_BOOKS.keys()) - set(data.keys())
     if missing_books:
-        print("\nMissing books:")
+        print(f"\nFound {len(missing_books)} missing books:")
         for book in sorted(missing_books):
             print(f"  - {book} ({MASTER_BOOKS[book]})")
 
@@ -216,16 +251,28 @@ def main():
             for error in errors:
                 print(f"  - {error}")
 
-    # Try to load master data for verse comparison
+    # Try to load master data for comparison
     master_path = Path(__file__).parent.parent / "data" / "bible_master.json"
     if master_path.exists():
         try:
             with open(master_path, 'r', encoding='utf-8') as f:
                 master_data = json.load(f)
 
+            # Compare counts
+            count_differences = compare_counts(master_data, data)
+            if count_differences:
+                print("\nChapter and verse count differences:")
+                for book_code, counts in count_differences.items():
+                    print(f"\n{book_code}:")
+                    if counts["master_chapters"] != counts["test_chapters"]:
+                        print(f"  Chapters: Master={counts['master_chapters']}, Test={counts['test_chapters']}")
+                    if counts["master_verses"] != counts["test_verses"]:
+                        print(f"  Verses: Master={counts['master_verses']}, Test={counts['test_verses']}")
+
+            # Compare individual verses
             differences = compare_verses(master_data, data)
             if differences:
-                print("\nVerse count differences:")
+                print("\nVerse differences:")
                 for book_code, chapters in differences.items():
                     print(f"\n{book_code}:")
                     for chapter_num, diff in chapters.items():
@@ -234,7 +281,7 @@ def main():
                         if diff["extra"]:
                             print(f"  Chapter {chapter_num} - Extra verses: {sorted(diff['extra'])}")
         except Exception as e:
-            print(f"\nWarning: Could not compare verses with master file - {str(e)}")
+            print(f"\nWarning: Could not compare with master file - {str(e)}")
 
     if not missing_books and not structure_errors:
         print("\nValidation successful! All books present and structure is correct.")
@@ -243,6 +290,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-

@@ -137,12 +137,15 @@ def get_chapter_text(book_code: str, chapter: int) -> Dict[int, str]:
             if verse_link and verse_link.get('id'):
                 try:
                     verse_num = int(verse_link['id'])
+                    print(f"Scraping {book_code} {chapter}:{verse_num}")
                     # Get the verse text from the next cell
                     text_cell = row.find('td', width="75%")
                     if text_cell:
                         # Clean up the text by removing newlines, extra whitespace, and forward slashes
                         verse_text = ' '.join(text_cell.text.strip().replace('/', '').split())
                         verses[verse_num] = verse_text
+                        # Print the verse as it's scraped
+                        print(f"  {book_code} {chapter}:{verse_num} - {verse_text}")
                 except ValueError:
                     continue
 
