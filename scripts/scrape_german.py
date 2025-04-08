@@ -59,7 +59,7 @@ OSIS_MAP = {
     "Mk": "Mark",
     "Lk": "Luke",
     "Joh": "John",
-    "Apg": "Acts",
+    "apg": "Acts",
     "Röm": "Rom",
     "1Kor": "1Cor",
     "2Kor": "2Cor",
@@ -82,6 +82,13 @@ OSIS_MAP = {
     "3Joh": "3John",
     "Jud": "Jude",
     "Offb": "Rev"
+}
+
+# Mapping of special characters in book codes to URL-safe versions
+URL_MAP = {
+    "Röm": "roem",
+    "Apg": "apg",
+    # Add other special character mappings if needed
 }
 
 def get_table_of_contents() -> Dict[str, Tuple[str, int]]:
@@ -107,6 +114,8 @@ def get_table_of_contents() -> Dict[str, Tuple[str, int]]:
                 if book_code in ['1Kön', '2Kön']:
                     book_code = book_code.replace('Kön', 'Koen')
 
+
+
                 if book_code in OSIS_MAP:
                     # Get all chapter links
                     chapter_links = cells[2].find_all('a')
@@ -119,36 +128,65 @@ def get_table_of_contents() -> Dict[str, Tuple[str, int]]:
 
 def get_chapter_text(book_code: str, chapter: int) -> Dict[int, str]:
     """Get the text for a specific chapter."""
-    # Convert book code to lowercase for URL construction
-    url_book_code = book_code.lower()
+    # Convert book code to URL-safe version if needed
+    url_book_code = URL_MAP.get(book_code, book_code.lower())
     url = f"{TABLE_OF_CONTENTS}{url_book_code}{chapter}.html"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    print(f"\nAttempting to fetch: {url}")
 
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an exception for bad status codes
+        print(f"Response status: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching URL: {e}")
+        return {}
+
+    soup = BeautifulSoup(response.text, 'html.parser')
     verses = {}
 
     # Find all table rows that contain verses
     rows = soup.find_all('tr')
-    for row in rows:
-        # Check if this row contains a verse
-        verse_cell = row.find('td', width="10%")
-        if verse_cell and verse_cell.find('a'):
-            verse_link = verse_cell.find('a')
-            if verse_link and verse_link.get('id'):
-                try:
-                    verse_num = int(verse_link['id'])
-                    print(f"Scraping {book_code} {chapter}:{verse_num}")
-                    # Get the verse text from the next cell
-                    text_cell = row.find('td', width="75%")
-                    if text_cell:
-                        # Clean up the text by removing newlines, extra whitespace, and forward slashes
-                        verse_text = ' '.join(text_cell.text.strip().replace('/', '').split())
-                        verses[verse_num] = verse_text
-                        # Print the verse as it's scraped
-                        print(f"  {book_code} {chapter}:{verse_num} - {verse_text}")
-                except ValueError:
-                    continue
+    print(f"Found {len(rows)} table rows")
 
+    for row in rows:
+        # Try to find verse cell with width attribute first (standard structure)
+        verse_cell = row.find('td', width="10%")
+        if not verse_cell:
+            # If not found, try finding any td with an anchor (1 Chronicles structure)
+            verse_cell = row.find('td')
+            if not verse_cell or not verse_cell.find('a'):
+                continue
+
+        verse_link = verse_cell.find('a')
+        if not verse_link:
+            continue
+
+        verse_id = verse_link.get('id')
+        if not verse_id:
+            continue
+
+        try:
+            verse_num = int(verse_id)
+            print(f"Found verse {verse_num}")
+
+            # Try to find text cell with width attribute first (standard structure)
+            text_cell = row.find('td', width="75%")
+            if not text_cell:
+                # If not found, try finding the second td (1 Chronicles structure)
+                text_cell = row.find_all('td')[1] if len(row.find_all('td')) > 1 else None
+
+            if text_cell:
+                # Clean up the text by removing newlines, extra whitespace, and forward slashes
+                verse_text = ' '.join(text_cell.text.strip().replace('/', '').split())
+                verses[verse_num] = verse_text
+                print(f"  {book_code} {chapter}:{verse_num} - {verse_text}")
+            else:
+                print(f"  Warning: No text cell found for verse {verse_num}")
+        except (ValueError, IndexError) as e:
+            print(f"  Warning: Error processing verse: {e}")
+            continue
+
+    print(f"Total verses found: {len(verses)}")
     return verses
 
 def print_detected_books(book_info: Dict[str, Tuple[str, int]]):
@@ -230,3 +268,33 @@ def scrape_bible(output_dir: str = "data"):
 
 if __name__ == "__main__":
     scrape_bible()
+
+
+
+
+# looks like verses aren't being scraped from 1chr.
+
+# 1chr verse structure:
+
+# <tr>
+#   <td>
+#     <a id="1" href="#1" name="1"><strong>1 Chr 1,1</strong></a>
+#   </td>
+#   <td>Adam, Set, Enosch,</td> <!-- verse text -->
+#   <td>&nbsp;</td>
+# </tr>
+
+# 2chr verse structure:
+
+# <tr>
+#   <td width="10%">
+#     <a id="1" href="#1" name="1"><strong>2 Chr 1,1</strong></a>
+#   </td>
+
+#   <td width="75%">
+#     Salomo, der Sohn Davids, gewann Macht in seinem Königtum, der Herr, sein
+#     Gott, war mit ihm und ließ ihn überaus stark werden.
+#   </td>
+
+#   <td width="15%"></td>
+# </tr>

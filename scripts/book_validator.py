@@ -3,6 +3,8 @@ import os
 from typing import Dict, List, Set
 from pathlib import Path
 
+# TODO: move MASTER_BOOKS to it's own file
+
 # Master book list with OSIS codes and English names
 MASTER_BOOKS = {
     "Gen": "Genesis",
