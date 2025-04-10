@@ -93,6 +93,26 @@ BOOK_MAPPING = {
     "ESTER SUPLEMENTOS GRIEGOS": "AddEsth"
 }
 
+# Dictionary of missing books with their direct URLs
+MISSING_BOOKS = {
+    "2John": {
+        "url": "__P10U.HTM",
+        "title": "SEGUNDA CARTA DE SAN JUAN"
+    },
+    "3John": {
+        "url": "__P10V.HTM",
+        "title": "TERCERA CARTA DE SAN JUAN"
+    },
+    "Obad": {
+        "url": "__PF2.HTM",
+        "title": "ABDIAS"
+    },
+    "Phlm": {
+        "url": "__PZY.HTM",
+        "title": "CARTA A FILEMON"
+    }
+}
+
 def get_html(url):
     """Fetch the HTML content of a URL with retries and error handling."""
     headers = {
@@ -180,22 +200,33 @@ def scrape_chapter(url):
 
     return book_name, chapter_number, verses
 
-def scrape_bible(limit=None):
+def load_existing_bible_data(file_path):
+    """Load existing Bible data from a JSON file if it exists."""
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            print(f"Error loading {file_path}. Starting with empty data.")
+    return {}
+
+def scrape_bible(limit=None, existing_data=None):
     """Scrape the entire Bible and structure it as JSON.
 
     Args:
         limit (int, optional): Maximum number of chapters to scrape. Useful for testing.
+        existing_data (dict, optional): Existing Bible data to avoid re-scraping.
     """
+    # Initialize with existing data if provided
+    bible_data = existing_data or {}
+
     # First, get the index page
     index_html = get_html(BASE_URL + "_INDEX.HTM")
     if not index_html:
         print("Failed to fetch the index page")
-        return
+        return bible_data
 
     soup = BeautifulSoup(index_html, 'html.parser')
-
-    # Create the Bible data structure
-    bible_data = {}
 
     # Find all chapter links - they start with "__P" and end with ".HTM"
     chapter_links = soup.find_all('a', href=re.compile(r'__P.*\.HTM'))
@@ -238,6 +269,15 @@ def scrape_bible(limit=None):
             print(f"  Unknown book name: {book_name}")
             continue
 
+        # Skip if this book is already in the existing data
+        if existing_data and osis_abbr in existing_data:
+            print(f"  Skipping {osis_abbr} - already in existing data")
+            continue
+
+        # Print book and chapter information
+        print(f"  Scraping {book_name} (OSIS: {osis_abbr}) - Chapter {chapter_number}")
+        print(f"  Found {len(verses)} verses")
+
         # Add the book if it doesn't exist
         if osis_abbr not in bible_data:
             bible_data[osis_abbr] = {
@@ -259,6 +299,42 @@ def scrape_bible(limit=None):
         # Be nice to the server
         time.sleep(0.5)
 
+    # Handle missing books
+    print("Processing missing books...")
+    for osis_abbr, book_info in MISSING_BOOKS.items():
+        # Skip if this book is already in the existing data
+        if existing_data and osis_abbr in existing_data:
+            print(f"  Skipping {osis_abbr} - already in existing data")
+            continue
+
+        print(f"Processing missing book: {osis_abbr}")
+        url = BASE_URL + book_info["url"]
+
+        # Scrape the chapter
+        book_name, chapter_number, verses = scrape_chapter(url)
+
+        if not verses:
+            print(f"  Failed to extract verses for {osis_abbr}")
+            continue
+
+        # Print book and chapter information
+        print(f"  Scraping {book_info['title']} (OSIS: {osis_abbr})")
+        print(f"  Found {len(verses)} verses")
+
+        # Add the book if it doesn't exist
+        if osis_abbr not in bible_data:
+            bible_data[osis_abbr] = {
+                "title": book_info["title"],
+                "chapters": {}
+            }
+
+        # Add the chapter (use "1" as chapter number if not provided)
+        chapter_num = chapter_number or "1"
+        bible_data[osis_abbr]["chapters"][chapter_num] = verses
+
+        # Be nice to the server
+        time.sleep(0.5)
+
     return bible_data
 
 def main():
@@ -266,13 +342,23 @@ def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Scrape the Spanish Bible from the Vatican website.')
     parser.add_argument('--limit', type=int, help='Maximum number of chapters to scrape')
+    parser.add_argument('--output', type=str, default='bible_es.json', help='Output file path')
+    parser.add_argument('--force', action='store_true', help='Force re-scraping of all books')
     args = parser.parse_args()
 
+    output_file = args.output
+
+    # Load existing data if available and not forcing re-scrape
+    existing_data = None
+    if not args.force and os.path.exists(output_file):
+        print(f"Loading existing data from {output_file}")
+        existing_data = load_existing_bible_data(output_file)
+        print(f"Loaded {len(existing_data)} books from existing data")
+
     print("Starting to scrape the Spanish Bible...")
-    bible_data = scrape_bible(limit=args.limit)
+    bible_data = scrape_bible(limit=args.limit, existing_data=existing_data)
 
     if bible_data:
-        output_file = "spanish_bible.json"
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(bible_data, f, ensure_ascii=False, indent=2)
 
@@ -294,3 +380,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
