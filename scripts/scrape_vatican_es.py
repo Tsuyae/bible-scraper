@@ -147,33 +147,44 @@ def extract_verses(html_content):
     verse_paragraphs = soup.find_all('p', class_='MsoNormal')
 
     verses = {}
+    current_verse_number = None
+    current_verse_text = []
 
     for p in verse_paragraphs:
         # Convert the paragraph to string and decode HTML entities
         p_str = str(p)
 
-        # Skip if this doesn't look like a verse paragraph
-        if not re.search(r'>(\d+)\s', p_str):
-            continue
-
-        # Extract the verse number (first number in the paragraph)
+        # Check if this paragraph contains a verse number
         verse_match = re.search(r'>(\d+)\s', p_str)
+
         if verse_match:
-            verse_number = verse_match.group(1)
+            # If we were building a verse, save it before starting a new one
+            if current_verse_number is not None and current_verse_text:
+                verse_text = ' '.join(current_verse_text)
+                verse_text = re.sub(r'\s+', ' ', verse_text).strip()
+                verses[current_verse_number] = verse_text
+                current_verse_text = []
 
-            # Get the complete text of the verse
-            verse_text = p.get_text(strip=True)
-
+            # Start a new verse
+            current_verse_number = verse_match.group(1)
+            text = p.get_text(strip=True)
             # Remove the verse number from the beginning
-            verse_text = re.sub(r'^\s*' + verse_number + r'\s*', '', verse_text)
+            text = re.sub(r'^\s*' + current_verse_number + r'\s*', '', text)
+            current_verse_text.append(text)
+        elif current_verse_number is not None:
+            # This is a continuation of the current verse
+            text = p.get_text(strip=True)
+            current_verse_text.append(text)
 
-            # Decode HTML entities
-            verse_text = html.unescape(verse_text)
+    # Don't forget to save the last verse
+    if current_verse_number is not None and current_verse_text:
+        verse_text = ' '.join(current_verse_text)
+        verse_text = re.sub(r'\s+', ' ', verse_text).strip()
+        verses[current_verse_number] = verse_text
 
-            # Clean up newlines and extra whitespace
-            verse_text = re.sub(r'\s+', ' ', verse_text).strip()
-
-            verses[verse_number] = verse_text
+    # Decode HTML entities for all verses
+    for verse_number in verses:
+        verses[verse_number] = html.unescape(verses[verse_number])
 
     return verses
 
@@ -438,3 +449,21 @@ if __name__ == "__main__":
 
 # usage example: python scripts/scrape_vatican_es.py --book Jude --output jude_only.json --force
 # outputs Jude only as data/jude_only.json. also forces re-scraping.
+
+# we're missing about half of the verses.
+# the script needs to me modified to handle the following format,
+# where the entire verse is split into multiple <p> tags:
+
+# <p class="MsoNormal" align="left" style="margin-left:0cm;text-align:left;
+# text-indent:0cm">1
+# 	<i>Del maestro de coro. </i>
+# 	<i>Para flautas. Salmo de David.</i>
+# </p>
+# <p class="MsoNormal" align="left" style="margin-left:0cm;text-align:left;
+# text-indent:0cm">2 Señor, escucha mis palabras, </p>
+# <p class="MsoNormal" align="left" style="margin-left:0cm;text-align:left;
+# text-indent:0cm">atiende a mis gemidos; </p>
+# <p class="MsoNormal" align="left" style="margin-left:0cm;text-align:left;
+# text-indent:0cm">3 oye mi clamor, mi Rey y mi Dios, </p>
+# <p class="MsoNormal" align="left" style="margin-left:0cm;text-align:left;
+# text-indent:0cm">porque te estoy suplicando. </p>

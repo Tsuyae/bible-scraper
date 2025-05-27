@@ -108,4 +108,4 @@ def scrape_biblegateway(bible_version="NRSVCE", bible_index_file="biblegateway_i
     print(f"Scraping complete! All verses saved to {output_path}")
 
 
-scrape_biblegateway(bible_version="NRSVCE", output_file="bible_nrsvce.json")
+scrape_biblegateway(bible_version="NABRE", output_file="bible_nrsvce.json")
